@@ -1,6 +1,7 @@
 # What the hell is going on in here?
 
 The files:
+
     * `jops.jl`: contains source code, mostly translated from the `JOPS` R package for P-Splines in Julia.
     * `f-air-wind.jl`: From Fig 2.1 in Section 2.1 of the JOPS book, basically nothing noteworthy here.
     * `f-mot-bsp.jl`: From Fig 2.5 in Section 2.2 of the book, fits cubic B-Splines to some data, using the `bbase` function.

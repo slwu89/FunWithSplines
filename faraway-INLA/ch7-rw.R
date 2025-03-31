@@ -30,3 +30,5 @@ plot_it <- function(results, title) {
 
 plot_it(result1, "RW(1) smoothing prior")
 plot_it(result2, "RW(2) smoothing prior")
+
+# what about the P-spline section, how is it any different?

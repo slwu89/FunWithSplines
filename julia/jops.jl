@@ -13,6 +13,9 @@ function diffmat(n, k)
     return r
 end
 
+# the reason that `BSplineBasis` has extra knots at the end is explained here: https://mc-stan.org/learn-stan/case-studies/splines_in_stan.html
+# basically it is because if you have splines of order k (polynomial degree + 1) then you need to repeat the endpoints k-1 times
+# otherwise things will not be well defined at the endpoints
 """
 Compute a B-spline basis matrix
 
@@ -20,7 +23,7 @@ Compute a B-spline basis matrix
     * `xl`: lower support, usu min(x)
     * `xr`: upper support, usu max(x)
     * `nseg`: number of segments on support
-    * `bdeg`: degree of splines
+    * `bdeg`: degree of splines (1 for linear, 3 for cubic are typical choices)
 
 Returns a basis matrix `B` with number of rows equal to length of `x` and number of columns
 equal `nseg` + `bdeg`.
