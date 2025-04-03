@@ -17,7 +17,7 @@ end
 # basically it is because if you have splines of order k (polynomial degree + 1) then you need to repeat the endpoints k-1 times
 # otherwise things will not be well defined at the endpoints
 """
-Compute a B-spline basis matrix
+Compute a B-spline basis matrix using evenly spaced knots.
 
     * `x`: vector of points we evaluate the basis functions at
     * `xl`: lower support, usu min(x)

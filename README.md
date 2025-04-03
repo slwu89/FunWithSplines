@@ -5,7 +5,7 @@ The `jops-book` folder is all from the "Scripts.zip" archive which may be downlo
 
 For Bayesian P-Splines, this is the key paper and describes the RW(1) and RW(2) priors well https://www.tandfonline.com/doi/abs/10.1198/1061860043010 (it's available free on JSTOR).
 
-## Notes on Bayesian P-Splines
+## Faraway et al. (Bayesian Regression with INLA)
 
 Let the smoothing spline have degree $2m-1$ such that if $m=1$ we get linear splines, and if $m-2$ we get cubic splines. The spline with a penalized least squares criterion is:
 
@@ -75,3 +75,11 @@ y | \beta, \sigma_{\epsilon}^{2} \sim N(B\beta, \sigma_{\epsilon}^{2}I), \quad \
 $$
 
 Where $Q_{m}$ is "the one from the RW models". But it's not clear if it is the one for equally spaced observations ($Q=D^{T}D$) or the highly complex one for non-equally spaced observations. As before, we have $\lambda = \sigma^{2}_{\epsilon} / \sigma^{2}_{\beta}$.
+
+## Synthesis
+
+From 2.3 in JOPS book and Lang and Brezger (2003) we get that the first and second order differences are as below. Let $\beta$ refer to the vector of coefficients. Note that $\nabla^{d}\beta_i$ does not exist for $i < 1+d$.
+
+  * $\nabla \beta_i = \beta_i - \beta_{i-1}$ and we have $\nabla \beta_i \sim N(0,\sigma_{f}^{2})$ therefore $\beta_i \sim N(\beta_{i-1},\sigma_{f}^{2}), \quad i>1$, and we let $\beta_1$ follow some diffuse prior.
+  * $\nabla^{2}\beta_i = \nabla(\beta_i - \beta_{i-1}) = \nabla \beta_i - \nabla \beta_{i-1} = (\beta_i - \beta_{i-1}) - (\beta_{i-1} - \beta_{i-2}) = \beta_i - 2\beta_{i-1} + \beta_{i-2}$. We have $\nabla^{2}\beta_i \sim N(0,\sigma_{f}^{2})$ therefore $\beta_i \sim N(2\beta_{i-1}-\beta_{i-2},\sigma_{f}^{2}), \quad i>2$, and we let $\beta_1$ and $\beta_2$ follow some diffuse prior.
+
