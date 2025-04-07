@@ -33,7 +33,7 @@ function bbase(x, xl, xr, nseg, bdeg)
     dx = (xr - xl)/nseg
     knots = collect(range(start = xl - bdeg * dx, step = dx, stop = xr + bdeg * dx))
 
-    # BSplineBasis duplicates low/upper breakpoints such that they appear k times
+    # BSplineBasis duplicates low/upper breakpoints such that they appear k-1 times
     k = bdeg + 1
     bbasis = BSplines.BSplineBasis(k, knots)
 

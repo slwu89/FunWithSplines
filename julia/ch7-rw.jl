@@ -43,7 +43,7 @@ n_samples_post = 1_000
 chain1 = sample(model1, NUTS(), n_samples_post)
 chain1 = DataFrame(chain1)[:, Cols(:sigma_f, :sigma_e, r"alpha")]
 
-function plot_samples(chain, x, y, B, title)
+function plot_samples(chain, x, y, B, f_true, title)
     p1 = scatter(x, y, legend=false, markeralpha=0.5, color="black", title=title)
     for i in 1:n_samples_post
         plot!(
@@ -55,7 +55,7 @@ function plot_samples(chain, x, y, B, title)
     p1
 end
 
-function plot_quantiles(chain, x, y, B, title)
+function plot_quantiles(chain, x, y, B, f_true, title)
     q_05 = mapcols(x -> quantile(x, 0.5), chain)
     q_025 = mapcols(x -> quantile(x, 0.025), chain)
     q_975 = mapcols(x -> quantile(x, 0.975), chain)
@@ -63,16 +63,14 @@ function plot_quantiles(chain, x, y, B, title)
     mid_q = B * Vector(q_05[1, r"alpha"])
     upper_q = B * Vector(q_975[1, r"alpha"])
     lower_q = B * Vector(q_025[1, r"alpha"])
-    plot!(p1, x, mid_q, legend=false, color="red", linealpha=0.8)
-    plot!(p1, x, upper_q, legend=false, color="red", linestyle=:dash, linealpha=0.8)
-    plot!(p1, x, lower_q, legend=false, color="red", linestyle=:dash, linealpha=0.8)
+    plot!(p1, x, ribbon = (mid_q .- lower_q, upper_q .- mid_q), mid_q, legend=false, color="red", linealpha=0.8)
     plot!(p1, x, f_true, legend=false, color="black", linestyle=:dash)
     p1
 end
 
 plot(
-    plot_samples(chain1, x, y, B, "RW(1) prior with samples"),
-    plot_quantiles(chain1, x, y, B, "RW(1) prior with quantiles"),
+    plot_samples(chain1, x, y, B, f_true, "RW(1) prior with samples"),
+    plot_quantiles(chain1, x, y, B, f_true, "RW(1) prior with quantiles"),
     size=(1000,600)
 )
 
@@ -106,7 +104,7 @@ chain2 = sample(model2, NUTS(), n_samples_post)
 chain2 = DataFrame(chain2)[:, Cols(:sigma_f, :sigma_e, r"alpha")]
 
 plot(
-    plot_samples(chain2, x, y, B, "RW(2) prior with samples"),
-    plot_quantiles(chain2, x, y, B, "RW(2) prior with quantiles"),
+    plot_samples(chain2, x, y, B, f_true, "RW(2) prior with samples"),
+    plot_quantiles(chain2, x, y, B, f_true, "RW(2) prior with quantiles"),
     size=(1000,600)
 )
