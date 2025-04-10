@@ -1,10 +1,11 @@
 using RDatasets, DataFrames
 using DifferentiationInterface
-using Enzyme
+using Plots
 using ForwardDiff
 using GLM
 using LinearAlgebra
 
+# ch1 q13
 trees = dataset("datasets", "trees")
 
 tree_mod_expectation = function(beta, data)
@@ -14,9 +15,6 @@ end
 beta = [.002, 2, 1]
 
 f = tree_mod_expectation
-
-# DifferentiationInterface.jacobian(f, AutoEnzyme(), beta, Constant(trees))
-DifferentiationInterface.jacobian(f, AutoForwardDiff(), beta, Constant(trees))
 jac_prep = prepare_jacobian(f, AutoForwardDiff(), zeros(length(beta)), Constant(trees))
 
 # iterative least squares
@@ -35,3 +33,5 @@ mu, J = value_and_jacobian(f, jac_prep, AutoForwardDiff(), beta, Constant(trees)
 sig2 = sum((trees[!, :Volume] - mu).^2) / (nrow(trees) - length(beta))
 Vb = inv(transpose(J) * J) .* sig2
 se = sqrt.(diag(Vb))
+
+# ch2

@@ -21,3 +21,7 @@ b
 sig2 <- sum((Volume - EV$mu)^2)/(nrow(trees)-3)
 Vb <- solve(t(EV$J)%*%EV$J)*sig2
 se <- diag(Vb)^.5;se
+
+library(nlme)
+data(Rail)
+write.csv(Rail, "./data/Rail.csv", row.names=FALSE)
