@@ -55,7 +55,7 @@ llm_value(x) = first(llm(x, X, Z, y))
 llm_value([0.0,0.0])
 
 # fit the model
-rail_mod1 = optimize(llm_value, llm_grad, theta, LBFGS(;alphaguess=InitialStatic(scaled=true), linesearch=BackTracking()), Optim.Options(show_trace=true); inplace = false)
+rail_mod1 = optimize(llm_value, llm_grad, theta, LBFGS(;alphaguess=InitialStatic(scaled=true), linesearch=BackTracking()); inplace = false)
 
 exp.(Optim.minimizer(rail_mod))
 exp.(Optim.minimizer(rail_mod1))

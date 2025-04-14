@@ -62,3 +62,16 @@ exp(rail.mod$par) ## variance components
 solve(rail.mod$hessian) ## approx cov matrix for theta 
 attr(llm(rail.mod$par,X,Z,Rail$travel),"b")
 
+# ch2.5 linear mixed models in R
+library(nlme)
+data(Rail)
+lme(travel ~ 1, Rail, list(Rail = ~ 1))
+
+data(Loblolly)
+Loblolly$age <- Loblolly$age - mean(Loblolly$age)
+lmc <- lmeControl(niterEM=500,msMaxIter=100)
+m0 <- lme(
+  height ~ age + I(age^2) + I(age^3),Loblolly,
+  random = list(Seed = ~ age + I(age^2) + I(age^3)), 
+  correlation = corAR1(form = ~ age|Seed),control=lmc
+)
