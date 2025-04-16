@@ -13,7 +13,7 @@ $$
 \sum_{i=1}^{n} [y_{i} - f(x_{i})]^{2} + \lambda \int [f^{(m)}(x)]^{2} dx
 $$
 
-where $f^{(m)}(x)$ is the $m$th derivative of $f(x)$ and $\lambda$ is the smoothing parameter.
+where $f^{(m)}(x)$ is the $m^{th}$ derivative of $f(x)$ and $\lambda$ is the smoothing parameter.
 
 ### RW Priors for Equally-Spaced Locations
 
