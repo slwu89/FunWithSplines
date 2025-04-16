@@ -88,7 +88,7 @@ From 2.3 in JOPS book and Lang and Brezger (2003) we get that the first and seco
 This wild goose chase arose when I read section 2.5.2 of Wood's [GAM book](https://www.maths.ed.ac.uk/~swood34/igam/index.html), where the following LMM is fit:
 
 $$
-\text{height}_{ji} = \beta_{0} + \beta_{1}\text{age}_{ji} + \beta_{2}\text{age}_{ji}^{2} + \beta_{3}\text{age}_{ji}^{3} + b_{0} + \b_{1}\text{age}_{ji} + b_{2}\text{age}_{ji}^{2} + b_{3}\text{age}_{ji}^{3} + \epsilon_{ji}
+\text{height}{ji} = \beta{0} + \beta_{1}\text{age}{ji} + \beta{2}\text{age}{ji}^{2} + \beta{3}\text{age}{ji}^{3} + b{0} + \b_{1}\text{age}{ji} + b{2}\text{age}{ji}^{2} + b{3}\text{age}{ji}^{3} + \epsilon{ji}
 $$
 
 For $i^{th}$ measurement on the $j^{th}$ tree. The complexity is that the $\epsilon_{ji}$ terms have an AR(1) correlation structure within each tree $j$ to account for repeated observations. It turns out that the [MixedModels.jl](https://github.com/JuliaStats/MixedModels.jl) package cannot fit models with this type of residual correlation (confirmed by [asking on Discourse](https://discourse.julialang.org/t/ar-1-correlation-structure-on-errors-with-mixedmodels-jl/128066/5)).
