@@ -5,6 +5,7 @@ using DataFrames
 using Distributions
 using Optim
 using LineSearches
+using Plots
 using DifferentiationInterface
 import ForwardDiff
 
@@ -65,4 +66,9 @@ hess_aids!(H, x) = hessian!(model_aids_f, H, prep_hess_aids, ad_sys, x)
 
 # default HagerZhang line search is too aggressive
 result_aids = optimize(model_aids_f, grad_aids!, hess_aids!, pars_0, Newton(;alphaguess=InitialStatic(scaled=true), linesearch=BackTracking()))
-exp.(Optim.minimizer(result_aids))
+
+min_aids = exp.(Optim.minimizer(result_aids))
+cov_aids = inv(hessian(model_aids_f, prep_hess_aids, ad_sys, min_aids))
+
+scatter(aids.t, aids.cases, legend=false)
+plot!(aids.t, @. min_aids[1]*exp(min_aids[2]*aids.t))
