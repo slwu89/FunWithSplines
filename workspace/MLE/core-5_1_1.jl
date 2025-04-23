@@ -1,6 +1,9 @@
 # examples from section 5.1.1 Newton's Method
 # in Wood's Core Statistics
 
+# look at this to potentially provide a speed up
+# https://julianlsolvers.github.io/Optim.jl/stable/user/tipsandtricks/#Avoid-repeating-computations
+
 using DataFrames
 using Distributions
 using Optim
