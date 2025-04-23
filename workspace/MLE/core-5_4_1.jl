@@ -91,14 +91,22 @@ result_urchin = optimize(
 b_hat = Optim.minimizer(result_urchin)
 Optim.minimum(result_urchin)
 
-# test getting the Hessian at the conditional MLE
+# --------------------------------------------------
+# Hessian
+
+# 1. dense
 hessian(nlyfb_urchin, ad_sys, b_hat, Constant(θ_init), Constant(urchin))
 
+# 2. sparse w/TracerLocalSparsityDetector
 # the Hessian is very sparse, lets see if we can use a sparse-aware AD method
 sparse_ad_sys = AutoSparse(
     ad_sys;
-    sparsity_detector=TracerSparsityDetector(),
+    sparsity_detector=TracerLocalSparsityDetector(),
     coloring_algorithm=GreedyColoringAlgorithm(),
 )
 
 hessian(nlyfb_urchin, sparse_ad_sys, b_hat, Constant(θ_init), Constant(urchin))
+
+# 3. sparse preparation: nice & fast
+prep_h_nlyfb = prepare_hessian(nlyfb_urchin, sparse_ad_sys, zero(b_init), Constant(θ_init), Constant(urchin))
+hessian(nlyfb_urchin, prep_h_nlyfb, sparse_ad_sys, b_hat, Constant(θ_init), Constant(urchin))
