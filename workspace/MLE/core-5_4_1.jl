@@ -144,7 +144,8 @@ function marg_nll(Θ)
     f_yb = Optim.minimum(f_yb_mle)
 
     H = hessian(nlyfb_urchin, prep_h_nlyfb, sparse_ad_sys, b_hat, Constant(Θ), Constant(urchin))    
-    return -f_yb + 0.5 * (log((2π)^nb) - logdet(H))
+    # return -f_yb + 0.5 * (log((2π)^nb) - logdet(H))
+    return f_yb - 0.5 * (log((2π)^nb) - logdet(H))
 end
 
 marg_nll(θ_init)
@@ -159,7 +160,8 @@ marginal_mle = optimize(
     marg_nll,
     g_marg_nll!,
     θ_init,
-    LBFGS(;alphaguess=InitialStatic(scaled=true), linesearch=BackTracking())
+    LBFGS(;alphaguess=InitialStatic(scaled=true), linesearch=BackTracking()),
+    Optim.Options(show_trace=true)
 )
 # 2*Optim.minimum(marginal_mle) + 2*length(θ_init)
 Optim.minimizer(marginal_mle)
