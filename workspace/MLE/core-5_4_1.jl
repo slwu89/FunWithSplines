@@ -12,6 +12,7 @@ import ForwardDiff
 # for sparse AD
 using SparseConnectivityTracer
 using SparseMatrixColorings
+import Symbolics
 
 ad_sys = AutoForwardDiff()
 
@@ -38,7 +39,8 @@ The biological model for a single urchin; `g` and `p`
 """
 function model_urchin_vol(ω, g, p, a)
     aₘ = log(p / (g*ω))/g
-    return a < aₘ ? ω*exp(g*a) : p/g + p*(a-aₘ)
+    # return a < aₘ ? ω*exp(g*a) : p/g + p*(a-aₘ)
+    return ifelse(a < aₘ, ω*exp(g*a), p/g + p*(a-aₘ))
 end
 
 """
@@ -103,19 +105,22 @@ g_nlyfb!(G, b) = gradient!(nlyfb_urchin, G, prep_g_nlyfb, ad_sys, b, Constant(θ
 # the Hessian is very sparse, lets see if we can use a sparse-aware AD method
 const sparse_ad_sys = AutoSparse(
     ad_sys;
-    sparsity_detector=TracerLocalSparsityDetector(), # b/c of < in code
+    # sparsity_detector=TracerLocalSparsityDetector(), # b/c of < in code
+    sparsity_detector=Symbolics.SymbolicsSparsityDetector(),
     coloring_algorithm=GreedyColoringAlgorithm(),
 )
+const prep_h_nlyfb = prepare_hessian(nlyfb_urchin, sparse_ad_sys, rand(length(b_init)), Constant(θ_init), Constant(urchin))
 
-# hessian(nlyfb_urchin, sparse_ad_sys, b_hat, Constant(θ_init), Constant(urchin))
 
-# 3. sparse preparation: nice & fast
-const prep_h_nlyfb = prepare_hessian(nlyfb_urchin, sparse_ad_sys, zero(b_init), Constant(θ_init), Constant(urchin))
-# H = hessian(nlyfb_urchin, prep_h_nlyfb, sparse_ad_sys, b_hat, Constant(θ_init), Constant(urchin))
+sparse_ad_sys1 = AutoSparse(
+    ad_sys;
+    # sparsity_detector=TracerSparsityDetector(),
+    # sparsity_detector=TracerLocalSparsityDetector(), # b/c of < in code
+    sparsity_detector=Symbolics.SymbolicsSparsityDetector(),
+    coloring_algorithm=GreedyColoringAlgorithm(),
+)
+prep_h_nlyfb1 = prepare_hessian(nlyfb_urchin, sparse_ad_sys1, rand(length(b_init)), Constant(θ_init), Constant(urchin))
 
-# # the Laplace approximation
-# nb = length(b_hat)
-# -f_yb + 0.5 * (log((2π)^nb) - logdet(H))
 
 # ------------------------------------------------------------
 # marginal log density of Theta L(Theta) = \int f_{\Theta}(y,b) db
@@ -144,14 +149,13 @@ function marg_nll(Θ)
     f_yb = Optim.minimum(f_yb_mle)
 
     H = hessian(nlyfb_urchin, prep_h_nlyfb, sparse_ad_sys, b_hat, Constant(Θ), Constant(urchin))    
-    # return -f_yb + 0.5 * (log((2π)^nb) - logdet(H))
     return f_yb - 0.5 * (log((2π)^nb) - logdet(H))
 end
 
 marg_nll(θ_init)
 
 fd_sys = AutoFiniteDiff()
-const marg_nll_prep = prepare_gradient(marg_nll, fd_sys, similar(θ_init))
+const marg_nll_prep = prepare_gradient(marg_nll, fd_sys, rand(length(θ_init)))
 # gradient(marg_nll, marg_nll_prep, fd_sys, θ_init)
 
 g_marg_nll!(G, θ) = gradient!(marg_nll, G, marg_nll_prep, fd_sys, θ)
@@ -165,3 +169,5 @@ marginal_mle = optimize(
 )
 # 2*Optim.minimum(marginal_mle) + 2*length(θ_init)
 Optim.minimizer(marginal_mle)
+
+# do a test comparing to full dense H optimization to see if its different
