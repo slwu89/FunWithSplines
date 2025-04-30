@@ -44,7 +44,7 @@ function model_urchin_vol(ω, g, p, a)
 end
 
 """
-Negative log density (likelihood) of y and b hat
+Negative log density (likelihood) of y and b hat, - \\log{f(y,b)}
 """
 function nlyfb_urchin(b, θ, urchin)
     # extract fixed effects
@@ -84,42 +84,23 @@ b_init = [
 const prep_g_nlyfb = prepare_gradient(nlyfb_urchin, ad_sys, zero(b_init), Constant(θ_init), Constant(urchin))
 g_nlyfb!(G, b) = gradient!(nlyfb_urchin, G, prep_g_nlyfb, ad_sys, b, Constant(θ_init), Constant(urchin))
 
-# # test optimizing for b
-# result_urchin = optimize(
-#     b -> nlyfb_urchin(b, θ_init, urchin), 
-#     g_nlyfb!,
-#     b_init, 
-#     LBFGS(;alphaguess=InitialStatic(scaled=true), linesearch=BackTracking())
-# )
-
-# b_hat = Optim.minimizer(result_urchin)
-# f_yb = Optim.minimum(result_urchin)
 
 # --------------------------------------------------
 # Hessian
 
 # 1. dense
 # hessian(nlyfb_urchin, ad_sys, b_hat, Constant(θ_init), Constant(urchin))
+const prep_h_nlyfb = prepare_hessian(nlyfb_urchin, ad_sys, rand(length(b_init)), Constant(θ_init), Constant(urchin))
 
 # 2. sparse w/TracerLocalSparsityDetector
 # the Hessian is very sparse, lets see if we can use a sparse-aware AD method
-const sparse_ad_sys = AutoSparse(
+const sp_ad_sys = AutoSparse(
     ad_sys;
     # sparsity_detector=TracerLocalSparsityDetector(), # b/c of < in code
     sparsity_detector=Symbolics.SymbolicsSparsityDetector(),
     coloring_algorithm=GreedyColoringAlgorithm(),
 )
-const prep_h_nlyfb = prepare_hessian(nlyfb_urchin, sparse_ad_sys, rand(length(b_init)), Constant(θ_init), Constant(urchin))
-
-
-sparse_ad_sys1 = AutoSparse(
-    ad_sys;
-    # sparsity_detector=TracerSparsityDetector(),
-    # sparsity_detector=TracerLocalSparsityDetector(), # b/c of < in code
-    sparsity_detector=Symbolics.SymbolicsSparsityDetector(),
-    coloring_algorithm=GreedyColoringAlgorithm(),
-)
-prep_h_nlyfb1 = prepare_hessian(nlyfb_urchin, sparse_ad_sys1, rand(length(b_init)), Constant(θ_init), Constant(urchin))
+const prep_sp_h_nlyfb = prepare_hessian(nlyfb_urchin, sp_ad_sys, rand(length(b_init)), Constant(θ_init), Constant(urchin))
 
 
 # ------------------------------------------------------------
@@ -148,7 +129,7 @@ function marg_nll(Θ)
     b_cache .= b_hat # updated cached value for next iteration
     f_yb = Optim.minimum(f_yb_mle)
 
-    H = hessian(nlyfb_urchin, prep_h_nlyfb, sparse_ad_sys, b_hat, Constant(Θ), Constant(urchin))    
+    H = hessian(nlyfb_urchin, prep_sp_h_nlyfb, sp_ad_sys, b_hat, Constant(Θ), Constant(urchin))    
     return f_yb - 0.5 * (log((2π)^nb) - logdet(H))
 end
 
@@ -156,9 +137,8 @@ marg_nll(θ_init)
 
 fd_sys = AutoFiniteDiff()
 const marg_nll_prep = prepare_gradient(marg_nll, fd_sys, rand(length(θ_init)))
-# gradient(marg_nll, marg_nll_prep, fd_sys, θ_init)
-
 g_marg_nll!(G, θ) = gradient!(marg_nll, G, marg_nll_prep, fd_sys, θ)
+
 
 marginal_mle = optimize(
     marg_nll,
@@ -167,7 +147,7 @@ marginal_mle = optimize(
     LBFGS(;alphaguess=InitialStatic(scaled=true), linesearch=BackTracking()),
     Optim.Options(show_trace=true)
 )
-# 2*Optim.minimum(marginal_mle) + 2*length(θ_init)
-Optim.minimizer(marginal_mle)
+aic = 2*Optim.minimum(marginal_mle) + 2*length(θ_init)
+θ_mle = Optim.minimizer(marginal_mle)
 
 # do a test comparing to full dense H optimization to see if its different
