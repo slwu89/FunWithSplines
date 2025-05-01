@@ -32,4 +32,20 @@ Note that $E_{b|y,\theta^{'}} \log f_{\theta}(b|y) = \int \log f_{\theta}(b|y) f
 
 The algorithm is to find (the M step) $\theta^{*} = \text{argmax}_{\theta}Q_{\theta^{'}}(\theta)$ and set $\theta^{'} \leftarrow \theta^{*}$ until convergence.
 
-Above is the basic EM algorithm but Wood uses a higher order Laplace approximation for the E step, which seriously helps in evaluating $E_{b|y,\theta^{'}} \log f_{\theta}(b|y)$.
+Above is the basic EM algorithm but Wood uses a higher order Laplace approximation for the E step, which seriously helps in evaluating $E_{b|y,\theta^{'}} \log f_{\theta}(b|y)$. The point is to get a good approximation of $Q_{\theta^{'}}(\theta)$. Let's see how he does it.
+
+#### Approximation of E-step
+
+He does quite a bit of math to arrive at the following:
+
+$$
+h_{s} = s \log f_{\theta}(y,b) + \log f_{\theta^{'}}(y,b)
+$$
+
+Let $\hat{b}_{s}$ maximize $h_{s}$, and $H_{s} = -\nabla^{2} h_{s}(\hat{b}_{s})$. Then the following expression is the approxiation of $Q_{\theta^{'}}(\theta)$:
+
+$$
+\left. \log f_{\theta}(y,\hat{b}) - \frac{1}{2} \frac{1}{ds} \log |H_{s}| \right|_{s=0}
+$$
+
+where $\hat{b}$ is the maximizer of $\exp{\log f_{\theta}(y,b)}$.

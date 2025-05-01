@@ -10,11 +10,10 @@ using DifferentiationInterface
 import ForwardDiff
 
 # for sparse AD
-using SparseConnectivityTracer
 using SparseMatrixColorings
 import Symbolics
 
-ad_sys = AutoForwardDiff()
+const ad_sys = AutoForwardDiff()
 
 # load the urchin data
 const urchin = CSV.read("./MLE/urchin.csv", DataFrame)
@@ -86,17 +85,10 @@ g_nlyfb!(G, b) = gradient!(nlyfb_urchin, G, prep_g_nlyfb, ad_sys, b, Constant(θ
 
 
 # --------------------------------------------------
-# Hessian
+# Hessian prep
 
-# 1. dense
-# hessian(nlyfb_urchin, ad_sys, b_hat, Constant(θ_init), Constant(urchin))
-const prep_h_nlyfb = prepare_hessian(nlyfb_urchin, ad_sys, rand(length(b_init)), Constant(θ_init), Constant(urchin))
-
-# 2. sparse w/TracerLocalSparsityDetector
-# the Hessian is very sparse, lets see if we can use a sparse-aware AD method
 const sp_ad_sys = AutoSparse(
     ad_sys;
-    # sparsity_detector=TracerLocalSparsityDetector(), # b/c of < in code
     sparsity_detector=Symbolics.SymbolicsSparsityDetector(),
     coloring_algorithm=GreedyColoringAlgorithm(),
 )
@@ -133,12 +125,11 @@ function marg_nll(Θ)
     return f_yb - 0.5 * (log((2π)^nb) - logdet(H))
 end
 
-marg_nll(θ_init)
+# marg_nll(θ_init)
 
 fd_sys = AutoFiniteDiff()
 const marg_nll_prep = prepare_gradient(marg_nll, fd_sys, rand(length(θ_init)))
 g_marg_nll!(G, θ) = gradient!(marg_nll, G, marg_nll_prep, fd_sys, θ)
-
 
 marginal_mle = optimize(
     marg_nll,
@@ -149,5 +140,3 @@ marginal_mle = optimize(
 )
 aic = 2*Optim.minimum(marginal_mle) + 2*length(θ_init)
 θ_mle = Optim.minimizer(marginal_mle)
-
-# do a test comparing to full dense H optimization to see if its different
