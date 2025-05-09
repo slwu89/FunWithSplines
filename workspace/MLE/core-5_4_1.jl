@@ -108,7 +108,7 @@ const b_cache = deepcopy(b_init)
 The marginal log-likelihood of the fixed effects L(Θ) = \\int f_{\\Theta}(y,b) db
 """
 function marg_nll(Θ)
-
+    # the `llu` function from Wood's R code
     nb = length(b_cache)
 
     f_yb_mle = optimize(

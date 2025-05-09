@@ -2,7 +2,9 @@
 urchins <- read.table("https://webhomes.maths.ed.ac.uk/~swood34/data/urchin-vol.txt")
 
 v0e <- expression(-log(2*pi*sigma^2)/2 -
-     (sqrt(y) - sqrt(exp(w)*exp(exp(g)*a)))^2/(2*sigma^2)
+     (sqrt(y) - sqrt(
+          exp(w)*exp(exp(g)*a)
+     ))^2/(2*sigma^2)
      - log(2*pi) - log(sig.g*sig.p) -
      (g-mu.g)^2/(2*sig.g^2) - (p-mu.p)^2/(2*sig.p^2))
 
@@ -12,12 +14,13 @@ v0 <- deriv(v0e,c("g","p"), hessian=TRUE,function.arg=
 
 v1e <- expression(-log(2*pi*sigma^2)/2 -
      (sqrt(y) - sqrt(
-          exp(p)/exp(g) + exp(p)*(a - ((p-g-w)/exp(g)))
+          # exp(p)/exp(g) + exp(p)*(a - (p-g-w)/exp(g))
+          exp(p)/exp(g) + exp(p)*(a - log(exp(p)/exp(g)*exp(w))/exp(g))
      ))^2/(2*sigma^2)
      - log(2*pi) - log(sig.g*sig.p) -
      (g-mu.g)^2/(2*sig.g^2) - (p-mu.p)^2/(2*sig.p^2))
 
-v1 <- deriv(v0e,c("g","p"), hessian=TRUE,function.arg=
+v1 <- deriv(v1e,c("g","p"), hessian=TRUE,function.arg=
      c("a","y","g","p","w","mu.g","sig.g","mu.p",
                                     "sig.p","sigma"))
 
@@ -73,3 +76,79 @@ lfybs <- function(s,b,vol,age,th,thp) {
 # now need function to maximize this wrt b
 # returns \log f_{\theta}(y, \hat{b}) (just the joint log likelihood at \hat{b}) if s=0
 # and \log |H_{s}|/s otherwise to compute 5.14 which is the approximation of Q_{\theta^{'}}(\theta)
+laplace <- function(s=0,th,thp,vol,age,b=NULL,tol=.Machine$double.eps^.7) {
+     ii <- c(3,5,6) # variance parameters
+     thp[ii] <- exp(thp[ii])
+     th[ii] <- exp(th[ii])
+     n <- length(vol)
+     # initialize b
+     if (is.null(b)) {
+          b <- c(rep(thp[2],n),rep(thp[4],n))
+     } 
+     lf <- lfybs(s,b,vol,age,th,thp)
+     # newton loop to find \hat{b}
+     for (i in 1:200) {
+          # R'R = fixed Hessian, R upper tri
+          R <- pdR(-lf$H)
+          step <- backsolve(R,forwardsolve(t(R),lf$g)) ## Newton 
+          conv <- ok <- FALSE
+          while (!ok) {
+               lf1 <- lfybs(s,b+step,vol,age,th,thp)
+               if (sum(abs(lf1$g)>abs(lf1$lf)*tol)==0 || sum(b+step!=b)==0) {
+                    conv <- TRUE
+               }
+               kk <- 0
+               if (!conv&&kk<30&&(!is.finite(lf1$lf) || lf1$lf < lf$lf)) {
+                    step <- step/2;kk <- kk+1
+               } else {
+                    ok <- TRUE
+               }
+          }
+          dlf <- abs(lf$lf-lf1$lf);lf <- lf1;b <- b + step;
+          if (dlf<tol*abs(lf$lf)||conv||kk==30) {
+               break
+          }
+     }
+     if (s==0) {
+          return(list(g=lfyb(b,vol,age,th)$lf,b=b))
+     }
+     R <- pdR(-lf$H,10)
+     list(b=b,rldetH = sum(log(diag(R))))
+}
+
+
+Q <- function(th,thp,vol,age,eps=1e-5) {
+     ## 1. find b.hat maximising log joint density at thp
+     if (exists(".inib",envir=environment(Q))) { 
+          b <- get(".inib",envir=environment(Q))
+     } else {
+          b <- NULL
+     }
+     la <- laplace(s=0,th,thp,vol,age,b=b)
+     assign(".inib",la$b,envir=environment(Q))
+     ## 2. For s = -eps and eps find b maximising s log joint ## at th + log joint at thp along with log|H_s|.
+     lap <- laplace(s=eps/2,th,thp,vol,age,b=la$b)$rldetH
+     lam <- laplace(s= -eps/2,th,thp,vol,age,b=la$b)$rldetH
+     la$g - (lap-lam)/eps
+}
+
+thp <- th <- rep(0,6); ## starting values
+for (i in 1:30) { ## EM loop
+     er <- optim(th,Q,control=list(fnscale=-1,maxit=200),vol=urchins$vol,age=urchins$age,thp=thp)
+     th <- thp <- er$par
+     cat(th,"\n")
+}
+
+# tests
+th <- c(
+    -3.0,
+    -0.3, 
+    -1.5,
+    0.15,
+    -1.5,
+    -1.37
+)
+n <- nrow(urchins)
+b <- c(rep(th[2],n),rep(th[4],n))
+tmp <- lfyb(b,urchins$vol,urchins$age,th)
+tmp$lf
